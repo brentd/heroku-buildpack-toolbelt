@@ -19,21 +19,6 @@ CACHE_DIR=$2
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
 BUILDPACK_DIR="$(dirname $(dirname $0))"
 
-function error() {
-  echo " !     $*" >&2
-  exit 1
-}
-
-function package_download() {
-  engine="$1"
-  version="$2"
-  location="$3"
-
-  mkdir -p $location
-  package="https://${S3_BUCKET}.s3.amazonaws.com/$engine-$version.tgz"
-  curl $package -s -o - | tar xzf - -C $location
-}
-
 echo "-----> Fetching and vendoring Heroku Toolbelt into slug"
 
 # vendor directories
@@ -58,9 +43,5 @@ bin/heroku update
 mkdir -p $BUILD_DIR/.heroku
 cp -r $HOME/.heroku/* $BUILD_DIR/.heroku/
 
-touch $BUILD_DIR/.profile.d/path.sh
-cat > "$BUILD_DIR/.profile.d/path.sh" <<EOF
-export PATH=$PATH:/app/vendor/heroku-toolbelt/bin/
-EOF
-
-echo "-----> Heroku Toolbelt installation complete"
+mkdir -p $BUILD_DIR/.profile.d
+echo 'PATH=$PATH:/app/vendor/heroku-toolbelt/bin/' > $BUILD_DIR/.profile.d/heroku-toolbelt.sh
