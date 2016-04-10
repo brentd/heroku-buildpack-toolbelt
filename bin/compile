@@ -7,41 +7,39 @@ set -e
 # debug
 # set -x
 
-# clean up leaking environment
-unset GIT_DIR
-
-# config
-HEROKU_CLIENT_URL="http://assets.heroku.com.s3.amazonaws.com/heroku-client/heroku-client.tgz"
-
-# parse and derive params
 BUILD_DIR=$1
 CACHE_DIR=$2
-LP_DIR=`cd $(dirname $0); cd ..; pwd`
-BUILDPACK_DIR="$(dirname $(dirname $0))"
 
-echo "-----> Fetching and vendoring Heroku Toolbelt into slug"
+HEROKU_CLIENT_URL="http://assets.heroku.com.s3.amazonaws.com/heroku-client/heroku-client.tgz"
+CACHED_HEROKU_TOOLBELT="$CACHE_DIR/vendor/heroku-toolbelt"
 
-# vendor directories
-VENDORED_TOOLBELT="vendor/heroku-toolbelt"
-
-# download and extract the client tarball
-rm -rf "$BUILD_DIR/$VENDORED_TOOLBELT"
-mkdir -p "$BUILD_DIR/$VENDORED_TOOLBELT"
-cd "$BUILD_DIR/$VENDORED_TOOLBELT"
-
-if [[ -z "$(which wget)" ]]; then
-  curl -s $HEROKU_CLIENT_URL | tar xz
+if [ -d $CACHED_HEROKU_TOOLBELT ]; then
+  echo "-----> Using cached Heroku Toolbelt installation"
 else
+  echo "-----> Fetching and caching Heroku Toolbelt files"
+
+  # download and extract the client tarball
+  mkdir -p $CACHED_HEROKU_TOOLBELT
+  cd $CACHED_HEROKU_TOOLBELT
+
   wget -qO- $HEROKU_CLIENT_URL | tar xz
+
+  mv heroku-client/* .
+  rmdir heroku-client
 fi
 
-mv heroku-client/* .
-rmdir heroku-client
+echo "-----> Updating Heroku Toolbelt"
 
-echo "-----> Installing Heroku Toolbelt"
-bin/heroku update
-mkdir -p $BUILD_DIR/.heroku
-cp -r $HOME/.heroku/* $BUILD_DIR/.heroku/
+# Symlink ~/.heroku in the build container's $HOME while we update
+mkdir -p $CACHE_DIR/.heroku
+ln -fs $CACHE_DIR/.heroku $HOME/.heroku
+$CACHED_HEROKU_TOOLBELT/bin/heroku update
 
+# Copy the files from cache into the slug
+mkdir -p $BUILD_DIR/vendor/heroku-toolbelt
+cp -rf $CACHED_HEROKU_TOOLBELT $BUILD_DIR/vendor/heroku-toolbelt
+cp -rf $CACHE_DIR/.heroku $BUILD_DIR/.heroku
+
+# Add `heroku` bin to path
 mkdir -p $BUILD_DIR/.profile.d
 echo 'PATH=$PATH:/app/vendor/heroku-toolbelt/bin/' > $BUILD_DIR/.profile.d/heroku-toolbelt.sh
