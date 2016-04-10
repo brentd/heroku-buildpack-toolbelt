@@ -57,6 +57,8 @@ echo "-----> Installing Heroku Toolbelt"
 bin/heroku update
 mkdir -p $BUILD_DIR/.heroku
 cp -r $HOME/.heroku/* $BUILD_DIR/.heroku/
+
+touch $BUILD_DIR/.profile.d/path.sh
 cat > "$BUILD_DIR/.profile.d/path.sh" <<EOF
 export PATH=$PATH:/app/vendor/heroku-toolbelt/bin/
 EOF
