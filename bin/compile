@@ -66,9 +66,12 @@ mkdir -p $BUILD_DIR/.profile.d
 cp "$BUILDPACK_DIR/bin/gen-netrc.sh" $BUILD_DIR/.profile.d/
 chmod +x $BUILD_DIR/.profile.d/gen-netrc.sh
 
-echo "-----> installing heroku toolbelt"
+echo "-----> Installing Heroku Toolbelt"
 bin/heroku update
 mkdir -p $BUILD_DIR/.heroku
 cp -r $HOME/.heroku/* $BUILD_DIR/.heroku/
+cat > "$BUILD_DIR/.profile.d/path.sh" <<EOF
+export PATH=$PATH:/app/vendor/heroku-toolbelt/bin/
+EOF
 
-echo "-----> heroku toolbelt installation done"
+echo "-----> Heroku Toolbelt installation complete"
